@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Form</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #d5ddde, #e0f7fa);
+            font-family: 'Roboto', sans-serif;
+            color: #333333;
+        }
+
+        .hover-slate {
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .hover-slate:hover {
+            background-color: #f1f5f9;
+        }
+
+        .row-absent {
+            background-color: #fef2f2;
+        }
+
+        .attendance-dropdown {
+            position: relative;
+        }
+
+        .attendance-dropdown select {
+            z-index: 10;
+        }
+
+        .responsive-table {
+            overflow-x: auto;
+        }
+
+        td {
+            position: relative;
+            overflow: visible;
+        }
+
+        select {
+            min-width: 100px;
+            max-width: 100%;
+        }
+    </style>
+</head>
+
+<body class="bg-white text-gray-900 p-6">
+
+    <div class="container mx-auto max-w-5xl">
+        
+        <section>
+            <div class="bg-[#f5f5f5] my-5 text-center m-auto select-none rounded-lg shadow-lg pb-2 ">
+                <h3 class="text-gray-700 font-bold uppercase text-sm tracking-wider py-3">
+                    Statistics</h3>
+                <hr>
+                <div
+                    class="translate shadow-xl translate-transform transition  hover:scale-105 max-sm:m-4 max-md:m-6 lg:m-8 bg-[#f2eded] py-5">
+                    <div class="flex items-center justify-center min-h-[300px] max-h-[450px]">
+                        <canvas id="currentStats" width="auto"></canvas>
+                    </div>
+                </div>
+                <hr>
+                <div
+                    class="translate shadow-xl translate-transform transition hover:scale-105 max-sm:m-4 max-md:m-6 lg:m-8 bg-[#f2eded] py-5">
+                    <div class="flex items-center justify-center min-h-[350px]">
+                        <canvas id="prevweekStats" width="auto"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Header -->
+        <h1 class="text-4xl font-semibold text-center mb-10 tracking-tight">
+            Attendance Form
+        </h1>
+
+        <!-- Attendance Table -->
+        <div class="responsive-table shadow-md rounded-lg">
+            <form id="attendanceForm">
+                <table class="min-w-full bg-white rounded-lg">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="py-3 px-6 text-left text-gray-700 uppercase text-sm tracking-wider">Student ID
+                            </th>
+                            <th class="py-3 px-6 text-left text-gray-700 uppercase text-sm tracking-wider">Name</th>
+                            <th class="py-3 px-6 text-left text-gray-700 uppercase text-sm tracking-wider">Roll No.</th>
+                            <th class="py-3 px-6 text-left text-gray-700 uppercase text-sm tracking-wider">Gender</th>
+                            <th class="py-3 px-6 text-left text-gray-700 uppercase text-sm tracking-wider">Attendance
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTbody" class="divide-y divide-gray-200">
+                    </tbody>
+                </table>
+            </form>
+        </div>
+
+        <div class="text-center mt-8">
+            <button onclick="postAttendance()"
+                class="px-6 py-3 bg-gray-900 text-white text-lg font-semibold rounded-lg shadow-md transition-all hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300">
+                Submit attendance
+            </button>
+        </div>
+
+        <!-- Output Section -->
+        <div id="output" class="mt-10 bg-gray-50 p-6 rounded-lg shadow-md hidden">
+            <h2 class="text-2xl font-semibold mb-4">Generated JSON</h2>
+            <pre id="outputJson" class="text-gray-800"></pre>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const makeStats = (data) => {
+            attendanceweeklyTrendData = data['attendanceweeklyTrend']
+            attendanceYesterdayData = data['attendanceYesterdayData']
+            {
+                const ctx = document.getElementById('prevweekStats').getContext('2d');
+
+                const labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',];
+
+                const data = {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Attendance Over the Previous week',
+                        data: attendanceweeklyTrendData,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(209, 207, 203, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                    }]
+                };
+
+                const config = {
+                    type: 'line',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Attendance Trend For The Last week'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                };
+
+                new Chart(ctx, config)
+            }
+
+            {
+                const ctx = document.getElementById('currentStats').getContext('2d');
+                const config = {
+                    type: 'pie',
+                    data: {
+                        labels: ['Present + On Duty', 'Absent', 'On Leave'],
+                        datasets: [{
+                            label: 'Attendance',
+                            data: attendanceYesterdayData,
+                            backgroundColor: ['#36A2EB', '#FF6384', '#4BC0C0'],
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            title: { display: true, text: 'YESTERDAY\'S STATISTICS' }
+                        }
+                    }
+                };
+
+                new Chart(ctx, config)
+            }
+        }
+
+
+        $(document).ready(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const classId = urlParams.get('classId');
+
+            if (classId) {
+                fetch('/api/fetchAttendance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ classId: parseInt(classId) }),
+                })
+                    .then((res) => res.json())
+                    .then((data) => {
+                        updateAttendanceList(data);
+                    })
+                    .catch((err) => console.error('Error:', err));
+
+
+                fetch('/api/stats/class', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ classId: parseInt(classId) }),
+                })
+                    .then(res => res.json())
+                    .then(data => makeStats(data))
+                    .catch(err => console.error(err))
+            } else {
+                location.href = '/portal'
+            }
+        });
+
+        async function postAttendance() {
+            const rows = document.querySelectorAll('#attendanceTbody tr');
+            let attendanceData = [];
+
+            rows.forEach(row => {
+                const studentID = row.cells[0].innerText;
+                const attendance = row.querySelector('.attendance-dropdown').value;
+
+                const options = {
+                    'Absent': 0,
+                    'Present': 1,
+                    'On Duty': 2,
+                    'On Leave': 3
+                }
+
+                attendanceData.push({
+                    "id": studentID,
+                    "attendance": options[attendance]
+                });
+            });
+
+            $('.attendance-dropdown').each(function () {
+                $(this).on('focus', function () {
+                    $(this).closest('td').css('overflow', 'visible');
+                });
+
+                $(this).on('blur', function () {
+                    $(this).closest('td').css('overflow', '');
+                });
+            });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const classId = urlParams.get('classId');
+
+            const bodyData = {
+                classId: classId,
+                data: attendanceData
+            }
+
+            fetch('/api/postAttendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyData, null, 2)
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (Object.hasOwn(data, 'success')) {
+                        Swal.fire({
+                            title: 'Done!',
+                            text: 'Attendance was posted to server successfully.',
+                            icon: 'success',
+                            confirmButtonText: 'Cool'
+                        })
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'An error occured.',
+                            icon: 'error',
+                            confirmButtonText: 'Aah ok'
+                        })
+                    }
+                })
+                .catch((err) => console.error('Error:', err))
+        }
+
+        const updateAttendanceList = (attendanceData) => {
+            const tbody = $('#attendanceTbody');
+            tbody.empty();
+
+            attendanceData.forEach(student => {
+                const isAbsent = student.attendanceState === 0;
+
+                const row = $('<tr></tr>')
+                    .addClass(`hover-slate ${isAbsent ? 'row-absent' : ''} transition-all`);
+
+                row.append($('<td></td>').addClass('py-4 px-6').text(student.id));
+                row.append($('<td></td>').html(
+                    `<a href="/student?studentId=${student.id}">${student.name}</a>`
+                ).addClass('py-4 px-6'))
+                row.append($('<td></td>').addClass('py-4 px-6').text(student.roll_no));
+                row.append($('<td></td>').addClass('py-4 px-6').text(student.gender === 1 ? 'M' : 'F'));
+
+                const attendanceCell = $('<td></td>').addClass('py-4 px-6');
+
+                const select = $('<select></select>')
+                    .addClass('attendance-dropdown block w-full px-4 py-2 border rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 transition-all')
+                    .attr('name', `attendance_S${student.id}`)
+                    .on('change', function () {
+                        if ($(this).val() === 'Absent') {
+                            row.addClass('row-absent');
+                        } else {
+                            row.removeClass('row-absent');
+                        }
+                    });
+
+                const options = ['Absent', 'Present', 'On Duty', 'On Leave'];
+                options.forEach(optionText => {
+                    const option = $('<option></option>')
+                        .val(optionText)
+                        .text(optionText);
+
+                    if (optionText === 'Absent') {
+                        option.addClass('text-red-600 font-semibold');
+                    }
+
+                    if (student.attendanceState === options.indexOf(optionText)) {
+                        option.prop('selected', true);
+                    }
+                    select.append(option);
+                });
+
+                attendanceCell.append(select);
+                row.append(attendanceCell);
+                tbody.append(row);
+            });
+        };
+
+    </script>
+
+</body>
+
+</html>

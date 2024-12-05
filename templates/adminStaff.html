@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to bottom, #f5f5f5, #e0f7fa);
+            font-family: 'Roboto', sans-serif;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .shadow-card {
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #4A90E2, #50E3C2);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #50E3C2;
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background: #FF6F61;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            background: #FF5A4D;
+            transform: scale(1.05);
+        }
+
+        .hover-row {
+            transition: background-color 0.3s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        .hover-row:hover {
+            background-color: #f1f5f9;
+            transform: scale(1.02);
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        td {
+            font-size: 0.9rem;
+        }
+
+        .table-header {
+            background: #f0f4f8;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .zebra-row:nth-child(even) {
+            background: #fafafa;
+        }
+    </style>
+</head>
+
+<body class="p-6 min-h-screen">
+    <div class="max-w-5xl mx-auto">
+        <!-- Page Title -->
+        <div class="my-6 text-center">
+            <h1
+                class="text-4xl font-extrabold text-gray-800 py-4 bg-white shadow-md inline-block px-8 rounded-lg">
+                Staff Management Panel
+            </h1>
+        </div>
+
+        <!-- Add Faculty Button -->
+        <section class="my-5 flex justify-center">
+            <button id="addFacultyBtn"
+                class="btn-primary px-6 py-3 rounded-full text-lg font-semibold shadow-md transform hover:scale-105">
+                <svg class="inline mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Faculty
+            </button>
+        </section>
+
+        <!-- Faculty Table -->
+        <section class="my-5">
+            <table class="shadow-lg table-auto mx-auto rounded-lg bg-white overflow-hidden">
+                <thead class="table-header">
+                    <tr>
+                        <th class="py-3 px-6 text-left text-gray-700">ID</th>
+                        <th class="py-3 px-6 text-left text-gray-700">Lv</th>
+                        <th class="py-3 px-6 text-left text-gray-700">Name</th>
+                        <th class="py-3 px-6 text-left text-gray-700">Session</th>
+                        <th class="py-3 px-6 text-left text-gray-700">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="facultyListBody" class="zebra-row">
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script>
+        const addFacultyErrorPrompt = (textErrorValue) => {
+            if (!textErrorValue) return
+            Swal.fire({
+                icon: 'error',
+                title: textErrorValue,
+                confirmButtonText: 'Ok'
+            })
+            return
+        }
+        $(document).ready(() => {
+            fetch('/api/fetchFacultyInfo')
+                .then(res => res.json())
+                .then(data => updateFacultyList(data))
+                .catch(err => console.error(err))
+        })
+        const updateFacultyList = (data) => {
+            const tbody = $('#facultyListBody');
+            tbody.empty()
+    
+            data.forEach(faculty => {
+                const id = faculty['id'];
+                const name = faculty['name'];
+                const level = faculty['level'];
+                const session = faculty['session']
+                const email = faculty['email']
+                const options = ['None', 'Log out', 'Remove',]
+                const row = $('<tr></tr>').addClass(`hover-slate hover:bg-[#f1f5f9] transition-all`);
+                row.append($('<td></td>').addClass('py-3 px-6').text(id))
+                row.append($('<td></td>').addClass('py-3 px-6').text(level))
+                row.append($('<td></td>').addClass('py-3 px-6').text(name))
+                row.append($('<td></td>').addClass('py-3 px-8').text(session ? '🗝️' : '🔒'))
+                row.append($('<td></td>').addClass('py-3').html(`
+                <button type="button" ${session ? 'id="revokeFacultyBtn"' : 'disabled'} class="ml-3 bg-blue-500 text-white font-bold py-1 px-2 mt-1 border-b-4 border-blue-700 ${!session ? 'cursor-not-allowed rounded opacity-50' : 'revoke-btn'}">Revoke</button>
+                <button id="removeFaculyBtn" class="bg-[#e00d1f] hover:bg-[#ed7b39] text-white font-bold py-1 px-2 border-b-4 mt-1 max-sm:ml-2 border-[#a10512] hover:border-[#9c410c] rounded">Remove</button>
+                `))
+                tbody.append(row)
+            })
+        }
+        $('#addFacultyBtn').on('click', function () {
+            Swal.fire({
+                icon: 'question',
+                input: 'text',
+                inputLabel: "Name of the faculty",
+                inputPlaceholder: 'Type here',
+                confirmButtonText: 'Next',
+                width: 600,
+                padding: "3em",
+                color: "#716add",
+                backdrop: `
+        rgba(0,0,123,0.4)
+        url("https://raw.githubusercontent.com/gist/brudnak/aba00c9a1c92d226f68e8ad8ba1e0a40/raw/e1e4a92f6072d15014f19aa8903d24a1ac0c41a4/nyan-cat.gif")
+        left top
+        no-repeat
+      `
+            }).then(fNamePrompt => {
+                if (fNamePrompt.isConfirmed) {
+                    const fName = fNamePrompt.value
+                    if (fName === '') return addFacultyErrorPrompt('Empty value was sent')
+                    Swal.fire({
+                        icon: 'question',
+                        input: 'text',
+                        inputLabel: "Level of the faculty",
+                        inputPlaceholder: 'Type here',
+                        confirmButtonText: 'Next',
+                        width: 600,
+                        padding: "3em",
+                        color: "#716add",
+                        backdrop: `
+                    rgba(0,0,123,0.4)
+                    url("https://raw.githubusercontent.com/gist/brudnak/aba00c9a1c92d226f68e8ad8ba1e0a40/raw/e1e4a92f6072d15014f19aa8903d24a1ac0c41a4/nyan-cat.gif")
+                    left top
+                    no-repeat
+                    `
+                    }).then(fLevelPrompt => {
+                        if (fLevelPrompt.isConfirmed) {
+                            if (!Number.isInteger(parseInt(fLevelPrompt.value))) return addFacultyErrorPrompt('Faculty level must be an integer')
+                            const fLevel = parseInt(fLevelPrompt.value);
+                            Swal.fire({
+                                icon: 'question',
+                                input: 'email',
+                                inputLabel: "Email of the faculty",
+                                inputPlaceholder: 'Type here',
+                                confirmButtonText: 'Next',
+                                width: 600,
+                                padding: "3em",
+                                color: "#716add",
+                                backdrop: `
+                            rgba(0,0,123,0.4)
+                            url("https://raw.githubusercontent.com/gist/brudnak/aba00c9a1c92d226f68e8ad8ba1e0a40/raw/e1e4a92f6072d15014f19aa8903d24a1ac0c41a4/nyan-cat.gif")
+                            left top
+                            no-repeat
+                        `
+                            }).then(fEmailPrompt => {
+                                if (fEmailPrompt.isConfirmed) {
+                                    const fEmail = fEmailPrompt.value;
+                                    Swal.fire({
+                                        icon: 'question',
+                                        input: 'password',
+                                        inputLabel: "Password of the faculty",
+                                        inputPlaceholder: 'Type here',
+                                        confirmButtonText: 'Next',
+                                        width: 600,
+                                        padding: "3em",
+                                        color: "#716add",
+                                        backdrop: `
+                                    rgba(0,0,123,0.4)
+                                    url("https://raw.githubusercontent.com/gist/brudnak/aba00c9a1c92d226f68e8ad8ba1e0a40/raw/e1e4a92f6072d15014f19aa8903d24a1ac0c41a4/nyan-cat.gif")
+                                    left top
+                                    no-repeat
+                                    `
+                                    }).then(fPasswordPrompt => {
+                                        if (fPasswordPrompt.isConfirmed) {
+                                            const fPassword = fPasswordPrompt.value;
+    
+                                            if (fPassword === '' || fPassword === undefined) return addFacultyErrorPrompt('Put a proper password')
+                                            addFaculty(fName, fLevel, fEmail, fPassword)
+                                        }
+                                    })
+                                }
+                            })
+                        }
+                    })
+                }
+            })
+        })
+        $('#facultyListBody').on('click', '#revokeFacultyBtn', function () {
+            const facultyId = $(this).closest('tr').find('td:first').text();
+            Swal.fire({
+                icon: "question",
+                title: "Confirmation prompt!",
+                text: `Do you really want to revoke the token of faculty ${facultyId}`,
+                confirmButtonText: 'Yes',
+                showCancelButton: true,
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/api/revokeToken', {
+                        method: 'POST',
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ facultyId: facultyId })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (Object.hasOwn(data, 'success')) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Faculty\'s token has revoked",
+                                    text: `Faculty\'s token has revoked, they have been logged out`,
+                                    confirmButtonText: 'Cool',
+                                }).then((result) => location.reload())
+                            } else if (Object.hasOwn(data, 'invalidPerms')) {
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "Invalid Permission",
+                                    text: `You do not have the permission to execute this action`,
+                                    confirmButtonText: 'Okay',
+                                })
+                            } else Swal.fire({
+                                icon: "error",
+                                title: "An unknown error occured",
+                                confirmButtonText: 'Okay',
+                            })
+                        })
+                        .catch(Swal.fire({
+                            icon: "error",
+                            title: "API Error",
+                            confirmButtonText: 'Okay',
+                        }))
+                }
+            })
+        });
+        $('#facultyListBody').on('click', '#removeFaculyBtn', function () {
+            const facultyId = $(this).closest('tr').find('td:first').text();
+            Swal.fire({
+                icon: "question",
+                title: "Confirmation prompt!",
+                text: `Do you really want to remove faculty id ${facultyId}`,
+                confirmButtonText: 'Yes',
+                showCancelButton: true,
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/api/removeFaculty', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ facultyId: facultyId })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (Object.hasOwn(data, 'success')) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Faculty\'s token has revoked",
+                                    text: `Faculty\'s token has revoked, they have been logged out`,
+                                    confirmButtonText: 'Cool',
+                                }).then((result) => location.reload())
+                            } else if (Object.hasOwn(data, 'invalidPerms')) {
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "Invalid Permission",
+                                    text: `You do not have the permission to execute this action`,
+                                    confirmButtonText: 'Okay',
+                                })
+                            } else Swal.fire({
+                                icon: "error",
+                                title: "An unknown error occured",
+                                confirmButtonText: 'Okay',
+                            })
+                        })
+                        .catch(Swal.fire({
+                            icon: "error",
+                            title: "API Error",
+                            confirmButtonText: 'Okay',
+                        }))
+                }
+            })
+        });
+        const addFaculty = async (fName, fLevel, fEmail, fPassword) => {
+            if (fName === '' || fEmail === '' || fPassword === '' || !Number.isInteger(parseInt(fLevel))) {
+                return addFacultyErrorPrompt('One or more input values that you entered were incorrect')
+            }
+            fetch('/api/addFaculty', {
+                method: 'POST',
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 'fName': fName, 'fLevel': fLevel, 'fEmail': fEmail, 'fPassword': fPassword })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (Object.hasOwn(data, 'success')) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Faculty was added successfully',
+                            confirmButtonText: 'Cool'
+                        }).then(result => {
+                            location.reload()
+                        })
+                    } else if (Object.hasOwn(data, 'facultyAlreadyExists')) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Faculty already exists",
+                            text: `This faculty member already exists in the database`,
+                            confirmButtonText: 'Okay',
+                        })
+                    } else if (Object.hasOwn(data, 'invalidPerms')) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Invalid Permission",
+                            text: `You do not have the permission to execute this action or the faculty level you entered was higher than or equal to your access level`,
+                            confirmButtonText: 'Okay',
+                        })
+                    } else Swal.fire({
+                        icon: "error",
+                        title: "An unknown error occured",
+                        confirmButtonText: 'Okay',
+                    })
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: "error",
+                        title: "API Error ",
+                        confirmButtonText: 'Okay',
+                    })
+                })
+        }
+    </script>
+</body>
+
+</html>

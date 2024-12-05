@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardian Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4">
+        <!-- Your Children Section -->
+        <section id="children-section" class="mb-6">
+            <h2 class="text-2xl font-bold mb-4">Your Children</h2>
+            <div id="children-cards" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <!-- Cards will be dynamically injected here -->
+            </div>
+        </section>
+
+        <!-- Notification Section -->
+        <section id="notifications-section" class="mb-6">
+            <h2 class="text-2xl font-bold mb-4">Notifications</h2>
+            <div class="bg-white shadow rounded-lg p-4">
+                <p id="unseen-count" class="text-lg">You have <span class="font-bold">0</span> unseen notifications.</p>
+                <button id="view-notifications" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    View Notifications
+                </button>
+            </div>
+        </section>
+
+        <!-- Modal for Notifications -->
+        <div id="notifications-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 hidden flex justify-center items-center">
+            <div class="bg-white w-4/5 max-w-lg rounded-lg shadow-lg p-6 relative">
+                <h3 class="text-xl font-bold mb-4">Notifications</h3>
+                <div id="notification-list" class="space-y-2">
+                    <!-- Notifications will be dynamically added here -->
+                </div>
+                <button id="close-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+                    ✖
+                </button>
+            </div>
+        </div>
+
+        <!-- Tickets Section -->
+        <section id="tickets-section" class="mb-6">
+            <h2 class="text-2xl font-bold mb-4">Tickets</h2>
+            <div class="bg-white shadow rounded-lg p-4 mb-4">
+                <p class="text-lg font-bold">Create Ticket</p>
+                <div class="space-x-4 mt-4">
+                    <button class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">General</button>
+                    <button class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Leave App.</button>
+                    <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Urgent Ticket</button>
+                    <button class="bg-orange-400 text-white px-4 py-2 rounded hover:bg-orange-500">File A Complaint</button>
+                </div>
+            </div>
+
+            <!-- Open Tickets Section -->
+            <div class="bg-white shadow rounded-lg p-4">
+                <h3 class="text-lg font-bold mb-4">Open Tickets</h3>
+                <div id="open-tickets" class="space-y-2">
+                    <!-- Tickets will be dynamically added here -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Fetch and display children
+            fetch('/api/getGuardianChildren')
+                .then(response => response.json())
+                .then(children => {
+                    displayChildren(children);
+                })
+                .catch(() => {
+                    // Fallback data for children
+                    const fallbackChildren = [
+                        { name: "John Doe", class_name: "Grade 5", class_id: "101", id: "1" },
+                        { name: "Jane Smith", class_name: "Grade 6", class_id: "102", id: "2" }
+                    ];
+                    displayChildren(fallbackChildren);
+                });
+    
+            function displayChildren(children) {
+                children.forEach(child => {
+                    const card = `
+                        <div class="bg-white shadow rounded-lg p-4">
+                            <p class="text-lg font-bold">${child.name} [${child.id}]</p>
+                            <p>Class: ${child.class_name} [${child.class_id}]</p>
+                        </div>
+                    `;
+                    $('#children-cards').append(card);
+                });
+            }
+    
+            // Fetch and display notifications
+            fetch('/api/getGuardianNotifications')
+                .then(response => response.json())
+                .then(notifications => {
+                    displayNotifications(notifications);
+                })
+                .catch(() => {
+                    // Fallback data for notifications
+                    const fallbackNotifications = ["Homework due tomorrow", "Parent-teacher meeting scheduled"];
+                    displayNotifications(fallbackNotifications);
+                });
+    
+            function displayNotifications(notifications) {
+                $('#unseen-count span').text(notifications.length);
+    
+                $('#view-notifications').on('click', function () {
+                    $('#notifications-modal').removeClass('hidden');
+                    $('#notification-list').empty();
+    
+                    notifications.forEach(notification => {
+                        const row = `<p class="border-b py-2">${notification}</p>`;
+                        $('#notification-list').append(row);
+                    });
+                });
+            }
+    
+            // Close notifications modal
+            $('#close-modal').on('click', function () {
+                $('#notifications-modal').addClass('hidden');
+            });
+    
+            // Fetch and display open tickets
+            fetch('/api/getGuardianOpenTickets')
+                .then(response => response.json())
+                .then(tickets => {
+                    displayTickets(tickets);
+                })
+                .catch(() => {
+                    // Fallback data for tickets
+                    const fallbackTickets = [
+                        { id: "1", title: "Homework Issue", last_message_content: "Homework incomplete", is_msg_by_school: "1", has_seen: "0", category_type: "1" },
+                        { id: "2", title: "Leave Application", last_message_content: "Approved for 2 days", is_msg_by_school: "0", has_seen: "1", category_type: "2" }
+                    ];
+                    displayTickets(fallbackTickets);
+                });
+    
+            function displayTickets(tickets) {
+                tickets.forEach(ticket => {
+                    const category = ticket.category_type === "1" ? "General" :
+                                     ticket.category_type === "2" ? "Leave App." : "Urgent";
+                    const unseenIndicator = ticket.is_msg_by_school === "1" && ticket.has_seen === "0" 
+                        ? '<span class="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full ml-2">Unseen</span>' 
+                        : '';
+                    const lastMessage = ticket.is_msg_by_school === "1" 
+                        ? `School: ${ticket.last_message_content}` 
+                        : ticket.last_message_content;
+    
+                    const ticketRow = `
+                        <div class="flex justify-between items-center border-b py-2">
+                            <div>
+                                <p class="font-bold">${ticket.title} [${category}] ${unseenIndicator}</p>
+                                <p class="text-sm">${lastMessage}</p>
+                            </div>
+                            <a href="/ticket/ticketId?${ticket.id}" class="text-blue-500 hover:underline">View Ticket</a>
+                        </div>
+                    `;
+                    $('#open-tickets').append(ticketRow);
+                });
+            }
+        });
+    </script>
+    
+</body>
+</html>

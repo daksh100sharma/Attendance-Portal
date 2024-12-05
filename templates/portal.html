@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #f5f5f5, #e0f7fa);
+            font-family: 'Roboto', sans-serif;
+            color: #333333;
+        }
+
+        .card {
+            width: 100%;
+            padding: 1em;
+            background: #f5f5f5;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-img {
+            background-color: #ffcaa6;
+            height: 40%;
+            width: 100%;
+            border-radius: .5rem;
+            transition: .3s ease;
+        }
+
+        .card-info {
+            padding-top: 10%;
+        }
+
+        svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .card-footer {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            margin-top: auto;
+        }
+
+        .text-title {
+            font-weight: 900;
+            font-size: 1.2em;
+            line-height: 1.5;
+        }
+
+        .text-body {
+            font-size: .9em;
+            padding-bottom: 10px;
+        }
+
+        .card-button {
+            border: 1px solid #252525;
+            display: flex;
+            padding: .3em;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: .3s ease-in-out;
+        }
+
+        .card-img:hover {
+            transform: translateY(-25%);
+            box-shadow: rgba(226, 196, 63, 0.25) 0px 13px 47px -5px, rgba(180, 71, 71, 0.3) 0px 8px 16px -8px;
+        }
+
+        .card-button:hover {
+            border: 1px solid #ffcaa6;
+            background-color: #ffcaa6;
+        }
+    </style>
+</head>
+
+<body class="bg-white min-h-screen text-gray-900">
+
+    <!-- Header -->
+    <header class="bg-white text-black shadow-lg">
+        <h1 class="text-black font-abel text-3xl p-4 text-center drop-shadow-md">
+            📝 ATTENDANCE PORTAL
+        </h1>
+    </header>
+
+    <main class="container mx-auto p-5">
+        <!-- Chart Section -->
+        <section class="mb-8">
+            <div
+                class="w-full max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg transform transition hover:scale-105">
+                <h2 class="text-2xl font-semibold text-center mb-4 text-gray-700">
+                    Current's Attendance Statistics
+                </h2>
+                <div class="relative w-full max-w-[600px] mx-auto h-96">
+                    <canvas id="responsiveChart" class="absolute top-0 left-0 w-full h-full"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- User Information Section -->
+        <section>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Card 1 -->
+                <div class="bg-white p-6 rounded-lg shadow-lg transform transition hover:scale-105">
+                    <h3 class="text-xl font-bold mb-4 text-black font-abel">Your Information</h3>
+                    <table class="w-full text-left text-black font-abel">
+                        <tbody>
+                            <tr>
+                                <td class="pr-4 font-abel">Your ID:</td>
+                                <td id="selfInfoId" class="font-light">Loading...</td>
+                            </tr>
+                            <tr>
+                                <td class="pr-4 font-abel">Your Name:</td>
+                                <td id="selfInfoName" class="font-light">Loading...</td>
+                            </tr>
+                            <tr>
+                                <td class="pr-4 font-abel">Your Level:</td>
+                                <td id="selfInfoLevel" class="font-light">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="bg-white p-6 rounded-lg shadow-lg transform transition hover:scale-105">
+                    <h3 class="text-xl font-bold mb-4 text-black font-abel">Daily Advices</h3>
+                    <p id="dailyAdvices" class="font-light text-black font-abel">
+                        Loading...
+                    </p>
+                </div>
+            </div>
+        </section>
+        <section class="mt-6">
+            <h3 class="text-xl font-bold mb-4 text-black font-abel">Admin Section</h3>
+            <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                {% if userLevel >= 4 %}
+                <!-- Staff Manager -->
+                <div class="card flex flex-col justify-between bg-[#e1edeb]">
+                    <div class="card-info mt-4 flex-grow">
+                        <p class="text-title font-abel">Staff Manager</p>
+                        <p class="text-body font-abel">Manage staff from this section</p>
+                    </div>
+                    <div class="card-footer mt-4">
+                        <a href='/admin/faculty'><button
+                                class="bg-gray-300 text-black py-2 px-4 rounded-lg w-full hover:bg-gray-400 transform transition hover:scale-105">
+                                Open Manager
+                            </button></a>
+                    </div>
+                </div>
+        
+                <!-- Class Manager -->
+                <div class="card flex flex-col justify-between bg-[#ede1ec]">
+                    <div class="card-info mt-4 flex-grow">
+                        <p class="text-title font-abel">Class Manager</p>
+                        <p class="text-body font-abel">Manage class from this section</p>
+                    </div>
+                    <div class="card-footer mt-4">
+                        <a href='/admin/class'><button
+                                class="bg-gray-300 text-black py-2 px-4 rounded-lg w-full hover:bg-gray-400 transform transition hover:scale-105">
+                                Open Manager
+                            </button></a>
+                    </div>
+                </div>
+                {% endif %}
+        
+                {% if userLevel >= 3 %}
+                <!-- Add Student -->
+                <div class="card flex flex-col justify-between bg-[#d1f0f5]">
+                    <div class="card-info mt-4 flex-grow">
+                        <p class="text-title font-abel">Manage Students</p>
+                        <p class="text-body font-abel">Manage students from this section</p>
+                    </div>
+                    <div class="card-footer mt-4">
+                        <a href='/admin/addStudent'><button
+                                class="bg-gray-300 text-black py-2 px-4 rounded-lg w-full hover:bg-gray-400 transform transition hover:scale-105">
+                                Open Manager
+                            </button></a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+        
+        <!-- Faculty\'s Classes' -->
+        <section class="mt-6">
+            <h3 class="text-xl font-bold mb-4 text-black font-abel">Your Classes</h3>
+            <div id="card-container" class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            </div>
+        </section>
+
+        {% if userLevel >= 2 %}
+        <!-- Student\'s Search Panel' -->
+        <section class="mt-6">
+            <form>
+                <div class="bg-[#F5F5F5] p-6 rounded-lg shadow-lg text-white transform transition hover:scale-105">
+                    <h3 class="text-xl mb-4 text-black font-abel">Search Student</h3>
+
+                    <hr>
+
+                    <div class="w-full max-w-xs p-5 bg-white rounded-lg font-mono my-1 mt-3">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="unique-input">ID</label>
+                        <input
+                            class="text-sm custom-input w-full px-4 py-2 border border-gray-300 text-black rounded-lg shadow-sm transition duration-300 ease-in-out transform focus:-translate-y-1 focus:outline-blue-300 hover:shadow-lg hover:border-blue-300 bg-gray-100"
+                            placeholder="Example: 1, 59, 500, etc" type="text" id="queryStudent-input-id" />
+                    </div>
+
+
+                    <div class="w-full max-w-xs p-5 bg-white rounded-lg font-mono my-1">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="unique-input">Name</label>
+                        <input
+                            class="text-sm custom-input w-full px-4 py-2 border border-gray-300 text-black rounded-lg shadow-sm transition duration-300 ease-in-out transform focus:-translate-y-1 focus:outline-blue-300 hover:shadow-lg hover:border-blue-300 bg-gray-100"
+                            placeholder="Example: Daksh Sharma, Piyush, etc" type="text" id="queryStudent-input-name" />
+                    </div>
+
+                    <div class="w-full max-w-xs p-5 bg-white rounded-lg font-mono my-1">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="unique-input">Class</label>
+                        <input
+                            class="text-sm custom-input w-full px-4 py-2 border border-gray-300 text-black rounded-lg shadow-sm transition duration-300 ease-in-out transform focus:-translate-y-1 focus:outline-blue-300 hover:shadow-lg hover:border-blue-300 bg-gray-100"
+                            placeholder="Example: 1st A, 12th Commerce, etc" type="text"
+                            id="queryStudent-input-class" />
+                    </div>
+
+                    <div class="w-full max-w-xs p-5 bg-white rounded-lg font-mono my-1">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="unique-input">Roll Number</label>
+                        <input
+                            class="text-sm custom-input w-full px-4 py-2 border border-gray-300 text-black rounded-lg shadow-sm transition duration-300 ease-in-out transform focus:-translate-y-1 focus:outline-blue-300 hover:shadow-lg hover:border-blue-300 bg-gray-100"
+                            placeholder="Example: 19, 12, etc" type="text" id="queryStudent-input-rollno" />
+                    </div>
+                    <button type="button" onclick="queryStudent()"
+                        class="bg-blue-500 mt-2 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded ml-7">
+                        Query this student
+                    </button>
+            </form>
+
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Modal -->
+        <div id="studentModal"
+            class="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex justify-center items-center hidden z-50 transition-opacity duration-300 ease-in-out">
+            <div
+                class="relative bg-white rounded-3xl shadow-2xl overflow-hidden w-full max-w-3xl mx-4 sm:mx-0 transform transition-all duration-300 ease-in-out">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-800">Student Information</h2>
+                    <button id="closeModal"
+                        class="text-gray-400 hover:text-red-500 text-3xl font-bold transition duration-200 ease-in-out">
+                        &times;
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    <table class="table-auto w-full text-left border-collapse">
+                        <thead class="sticky top-0 bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-2 font-semibold text-gray-700 border-b">ID</th>
+                                <th class="px-4 py-2 font-semibold text-gray-700 border-b">Name</th>
+                                <th class="px-4 py-2 font-semibold text-gray-700 border-b">Roll No</th>
+                                <th class="px-4 py-2 font-semibold text-gray-700 border-b">Class</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <a href="/logout"><button class="m-auto p-3 rounded-md bg-black text-white font-abel mt-5">Log out</button></a>
+
+        </table>
+        </div>
+    </main>
+
+    <footer class="mt-8 text-center text-gray-600">
+        <p>&copy; 2024 Attendance Portal. All Rights Reserved.</p>
+    </footer>
+
+
+    <script>
+        let chartInstance;
+
+        const queryStudent = () => {
+            const idInput = $('#queryStudent-input-id');
+            const nameInput = $('#queryStudent-input-name');
+            const classInput = $('#queryStudent-input-class');
+            const rollNoInput = $('#queryStudent-input-rollno');
+
+            let parameterId = idInput.val() && Number.isInteger(parseInt(idInput.val())) ? idInput.val() : 'skipped';
+            let parameterName = nameInput.val() || 'skipped';
+            let parameterClass = classInput.val() || 'skipped';
+            let parameterRollNo = rollNoInput.val() && Number.isInteger(parseInt(rollNoInput.val())) ? rollNoInput.val() : 'skipped';
+
+            const requestData = {
+                id: parameterId,
+                name: parameterName,
+                class: parameterClass,
+                rollNo: parameterRollNo,
+            };
+
+            fetch('/api/queryStudent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData),
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`API fetch error: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    if (data && Array.isArray(data)) {
+                        showStudentModal(data);
+                    } 
+                })
+                .catch((error) => {
+                    console.error('Error querying student:', error);
+                    alert('Error fetching student data. Please try again.');
+                });
+        };
+
+
+        const showStudentModal = (studentData) => {
+            const studentTableBody = document.getElementById('studentTableBody');
+            studentTableBody.innerHTML = '';
+
+            studentData.forEach((student) => {
+                const rowHTML = `
+            <tr class="border-b">
+                <td class="px-4 py-2 text-gray-800">${student.id}</td>
+                <td class="px-4 py-2 text-gray-800">
+                <a class="text-blue-400 underline" 
+                {% if userLevel >= 3 %}href="student?studentId=${student.id}"{% endif %}>
+                ${student.name}
+                </a>
+            </td>
+                <td class="px-4 py-2 text-gray-800">${student.roll_no}</td>
+                <td class="px-4 py-2 text-gray-800">${student.class_name} (${student.class_id})</td>
+            </tr>
+        `;
+                studentTableBody.innerHTML += rowHTML;
+            });
+
+            const modal = document.getElementById('studentModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('opacity-100');
+            document.body.classList.add('modal-open');
+        };
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('studentModal');
+            const closeModalButtons = [document.getElementById('closeModal')].filter(Boolean);
+
+            const closeModal = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('opacity-100');
+                document.body.classList.remove('modal-open');
+            };
+
+            closeModalButtons.forEach((button) => button.addEventListener('click', closeModal));
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        });
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/stats/grand')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`API fetch error: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const chartData = [data.present, data.absent, data.onDuty, data.onLeave];
+                    updateChart(chartData);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    const chartData = [20, 20, 20, 20];
+                    updateChart(chartData);
+                });
+
+            fetch('/api/selfInfo')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`API fetch error: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.id && data.name && data.level) {
+                        updateSelfInfo(data.id, data.name, data.level);
+                    } else {
+                        console.error('Invalid data structure:', data);
+                        updateSelfInfo(1, 'Daksh Sharma', 5);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching self info:', error);
+                    updateSelfInfo(1, 'Daksh Sharma', 5);
+                });
+
+            fetch('/api/getClasses')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`API fetch error: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data) && data.every(item => Array.isArray(item) && item.length === 2)) {
+                        updateClasses(data);
+                    } else {
+                        updateClasses([
+                            [1, 'Sample Class 1'],
+                            [2, 'Sample Class 2'],
+                            [3, 'Sample Class 3'],
+                        ]);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching my classes:', error);
+                    updateClasses([
+                        [1, 'Sample Class 1'],
+                        [2, 'Sample Class 2'],
+                        [3, 'Sample Class 3'],
+                    ]);
+                });
+
+            fetch('https://api.adviceslip.com/advice')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`API fetch error: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateDailyAdvices(data.slip.advice);
+                })
+                .catch(error => {
+                    updateDailyAdvices('Problem occured while fetching tip');
+                })
+        });
+
+        const updateSelfInfo = (id, name, level) => {
+            $('#selfInfoName').text(name);
+            $('#selfInfoId').text(id);
+            if (level === 1) $('#selfInfoLevel').text('Junior staff');
+            if (level === 2) $('#selfInfoLevel').text('Intermediate staff');
+            if (level === 3) $('#selfInfoLevel').text('Senior staff');
+            if (level === 4) $('#selfInfoLevel').text('Management staff');
+            if (level === 5) $('#selfInfoLevel').text('Chief executive staff');
+        };
+
+        const updateDailyAdvices = (tip) => {
+            $('#dailyAdvices').text(tip);
+        }
+
+        const updateClasses = (classDataArray) => {
+            const $cardContainer = $("#card-container");
+            classDataArray.forEach(classData => {
+                const cardHTML = `
+    <div class="card flex flex-col justify-between">
+        <div class="card-img"></div>
+        <div class="card-info mt-4 flex-grow">
+            <p class="text-title font-abel">${classData[1]}</p>
+            <p class="text-body font-abel">View the classes for more info!!</p>
+        </div>
+        <div class="card-footer mt-4">
+            <a href='/class?classId=${classData[0]}'><button class="bg-gray-300 text-black py-2 px-4 rounded-lg w-full hover:bg-gray-400 transform transition hover:scale-105">
+                View Class
+            </button></a>
+        </div>
+    </div>
+`;
+                $cardContainer.append(cardHTML);
+            });
+
+        }
+        const updateChart = (newData) => {
+            const data = {
+                labels: ['Present', 'Absent', 'On Duty', 'On Leave'],
+                datasets: [{
+                    label: 'Attendance',
+                    data: newData,
+                    backgroundColor: ['#36A2EB', '#4BC0C0', '#FF6384', '#FFCE56'],
+                }],
+            };
+
+            const options = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    title: { display: true, text: 'TODAY\'s GRAND STATISTICS (YET)' },
+                },
+            };
+
+            const ctx = document.getElementById('responsiveChart').getContext('2d');
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data,
+                options,
+            });
+        };
+    </script>
+
+</body>
+
+</html>

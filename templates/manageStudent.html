@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Student Card</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #f5f5f5, #e0f7fa);
+            font-family: 'Roboto', sans-serif;
+            color: #333333;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- Student Card -->
+    <div class="max-w-sm sm:max-w-md md:max-w-lg w-full bg-white shadow-xl rounded-3xl p-6 mb-6">
+        <!-- Profile Header -->
+        <div class="flex flex-col items-center">
+            <div id="studentCard-field-attendance"
+                class="bg-gray-200 w-24 h-24 rounded-full flex items-center justify-center text-gray-500 text-2xl font-bold">
+                P
+            </div>
+            <h2 id="studentCard-field-name" class="mt-4 text-xl font-semibold text-gray-800"></h2>
+            <p id="studentCard-field-rollNo" class="text-gray-500 text-sm"></p>
+            <p id="studentCard-field-class" class="text-gray-500 text-sm"></p>
+        </div>
+
+        <!-- Edit Form -->
+        <div class="mt-6 bg-gray-100 p-4 rounded-xl">
+            <h3 class="font-bold text-gray-700 mb-2">Add Student Info</h3>
+            <div class="space-y-2">
+                <input id="editName" class="w-full p-2 border rounded" type="text" placeholder="Add Name" />
+                <input id="editClassId" class="w-full p-2 border rounded" type="text" placeholder="Add Class ID" />
+            </div>
+
+            <!-- Gender Selection -->
+            <div class="mt-4">
+                <label class="block text-gray-700 font-semibold mb-2">Gender</label>
+                <div class="flex space-x-4">
+                    <label>
+                        <input type="radio" name="gender" value="Male" class="text-blue-500" /> Male
+                    </label>
+                    <label>
+                        <input type="radio" name="gender" value="Female" class="text-pink-500" /> Female
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- JSON Info Section -->
+        <div class="mt-6 bg-gray-100 p-4 rounded-xl space-y-4" id="jsonFields">
+            <!-- Control Buttons -->
+            <div class="flex justify-end gap-2">
+                <button id="resetFieldsButton"
+                    class="bg-gray-500 hover:bg-gray-600 text-white py-1 px-4 rounded-lg text-sm font-semibold">
+                    Reset
+                </button>
+                <button id="saveFieldsButton"
+                    class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-4 rounded-lg text-sm font-semibold">
+                    Save
+                </button>
+            </div>
+        </div>
+
+        <!-- Add New Key Value Field -->
+        <button
+            class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center space-x-2"
+            id="addField">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clip-rule="evenodd" />
+            </svg>
+            <span>Add Field</span>
+        </button>
+    </div>
+
+    <!-- Delete Student Form -->
+    <div class="max-w-sm sm:max-w-md md:max-w-lg w-full bg-white shadow-xl rounded-3xl p-6">
+        <h3 class="font-bold text-gray-700 mb-4">Delete Student(s) by ID</h3>
+        <div class="bg-gray-100 p-4 rounded-xl space-y-4">
+            <input id="deleteStudentId" class="w-full p-2 border rounded" type="text" placeholder="Enter Student ID(s) (comma separated)" />
+            <div class="flex justify-end gap-2">
+                <button id="deleteStudentButton"
+                    class="bg-red-500 hover:bg-red-600 text-white py-1 px-4 rounded-lg text-sm font-semibold">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script>
+    $(document).ready(function () {
+        // Buttons and container references
+        const $resetFieldsButton = $('#resetFieldsButton');
+        const $saveFieldsButton = $('#saveFieldsButton');
+        const $addFieldButton = $('#addField');
+        const $jsonFieldsContainer = $('#jsonFields');
+        const $deleteStudentButton = $('#deleteStudentButton');
+
+        const resetForm = () => {
+            $('#editName').val('');
+            $('#editClassId').val('');
+            $jsonFieldsContainer.find('.dynamic-field').remove();
+            $('input[name="gender"]').prop('checked', false);
+        };
+
+        $addFieldButton.on('click', function () {
+            const newField = ` 
+                <div class="flex justify-between items-center border-b py-2 dynamic-field">
+                    <input class="w-1/4 p-2 border rounded json-key" type="text" placeholder="Key" />
+                    <input class="w-3/4 p-2 border rounded json-input" type="text" placeholder="Value" />
+                    <button class="text-red-500 hover:text-red-700 delete-field">&times;</button>
+                </div>`;
+            $jsonFieldsContainer.append(newField);
+        });
+
+        $jsonFieldsContainer.on('click', '.delete-field', function () {
+            $(this).closest('.dynamic-field').remove();
+        });
+
+        $saveFieldsButton.on('click', function () {
+            const studentData = {
+                name: $('#editName').val(),
+                class_id: $('#editClassId').val(),
+                gender: $('input[name="gender"]:checked').val(),
+                additional_data: {}
+            };
+
+            if (!studentData.gender) {
+                Swal.fire('Error!', 'Gender is a required field.', 'error');
+                return;
+            }
+
+            $('.json-input').each(function () {
+                const key = $(this).siblings('.json-key').val();
+                const value = $(this).val();
+                if (key && value) {
+                    studentData.additional_data[key] = value;
+                }
+            });
+
+            if (!studentData.name || !studentData.class_id) {
+                Swal.fire('Error!', 'Name and Class ID are required fields.', 'error');
+                return;
+            }
+
+            fetch('/api/addStudent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(studentData)
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Student added successfully',
+                            confirmButtonText: 'Cool'
+                        }).then(result => {
+                            if (result.isConfirmed) {
+                                location.reload();
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'No class found with that associated class ID',
+                            confirmButtonText: 'Okay'
+                        });
+                    }
+                })
+                .catch((error) => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'API Error',
+                        confirmButtonText: 'Okay'
+                    });
+                });
+        });
+
+        $resetFieldsButton.on('click', function () {
+            Swal.fire({
+                title: 'Reset Form?',
+                text: 'This will clear all fields. Are you sure?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Reset',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    resetForm();
+                }
+            });
+        });
+
+
+        $deleteStudentButton.on('click', function () {
+            const studentIds = $('#deleteStudentId').val().split(',').map(id => id.trim()).filter(id => id !== '');
+
+            const invalidIds = studentIds.filter(id => isNaN(id) || id === '');
+
+            if (invalidIds.length > 0) {
+                Swal.fire('Error!', 'Please enter only numeric values for student IDs, separated by commas.', 'error');
+                return;
+            }
+
+            fetch('/api/deleteStudent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: studentIds })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Student(s) deleted successfully',
+                            confirmButtonText: 'Cool'
+                        }).then(result => {
+                            if (result.isConfirmed) {
+                                location.reload();
+                            }
+                        });
+                    } else if (data.noStudentIDFound) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'One or more student id was not found in the database',
+                            confirmButtonText: 'Cool'
+                        }).then(result => {
+                            if (result.isConfirmed) {
+                                location.reload();
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'An unknown error occured',
+                            confirmButtonText: 'Okay'
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'API Error',
+                        confirmButtonText: 'Okay'
+                    });
+                });
+        });
+    });
+</script>
+
+</html>

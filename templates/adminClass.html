@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #f5f5f5, #e0f7fa);
+            font-family: 'Roboto', sans-serif;
+            color: #333333;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .shadow-card {
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #4A90E2, #50E3C2);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #50E3C2;
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background: #FF6F61;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            background: #FF5A4D;
+            transform: scale(1.05);
+        }
+
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: linear-gradient(to bottom, #ffffff, #f9f9f9);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 12px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal {
+            transition: all 0.3s ease;
+        }
+
+        .modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .card-title {
+            color: #4A90E2;
+        }
+
+        .input-field {
+            transition: border-color 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: #4A90E2;
+            box-shadow: 0 0 5px #4A90E2;
+        }
+    </style>
+</head>
+
+<body class="p-6 min-h-screen">
+    <div class="max-w-7xl mx-auto">
+        <!-- Page Title -->
+        <section class="mt-10 text-center">
+            <h1 class="text-4xl font-extrabold text-gray-800 py-4 bg-white shadow-lg inline-block px-8 rounded-lg">
+                Class Management Panel
+            </h1>
+        </section>
+
+        <!-- Add Class Button -->
+        <section class="my-5 flex justify-center">
+            <button id="addClassBtn"
+                class="btn-primary px-6 py-3 rounded-full text-lg font-semibold shadow-md transform hover:scale-105">
+                <svg class="inline mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add New Class
+            </button>
+        </section>
+
+        <!-- Classes Section -->
+        <section id="classesContainer" class="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div
+                class="bg-white p-6 rounded-2xl shadow-card card-hover flex flex-col justify-between border-t-4 border-blue-500">
+                <div class="flex-grow">
+                    <h4 class="text-2xl font-bold card-title mb-4 tracking-tight">12th Commerce [5]</h4>
+                    <div class="border-b border-gray-300 mb-4"></div>
+                    <p class="text-gray-600 text-lg mb-1"><strong>Head:</strong> Daksh Sharma</p>
+                    <p class="text-gray-600 text-lg mb-1"><strong>Faculties:</strong> Daksh Sharma, Pradeep</p>
+                    <p class="text-gray-600 text-lg mb-1"><strong>CR:</strong> Piyush Soni</p>
+                </div>
+                <button onclick="openModal()" class="mt-6 btn-primary w-full py-3 rounded-lg text-lg shadow-md">
+                    Edit Class
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal -->
+    <div id="editModal"
+        class="modal hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center p-4">
+        <div class="bg-white rounded-lg p-8 max-w-lg w-full shadow-xl">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">Edit Class</h2>
+            <form>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Class Name:</label>
+                    <input type="text" name="className"
+                        class="w-full input-field border border-gray-300 py-2 px-4 rounded-lg focus:outline-none">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Class ID:</label>
+                    <input type="text" name="classId" disabled
+                        class="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-lg">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Class Head ID:</label>
+                    <input type="text" name="classHead"
+                        class="w-full input-field border border-gray-300 py-2 px-4 rounded-lg">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Faculty IDs:</label>
+                    <input type="text" name="facultyMembers"
+                        class="w-full input-field border border-gray-300 py-2 px-4 rounded-lg">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-2">Class Representative ID:</label>
+                    <input type="number" name="classRepresentative"
+                        class="w-full input-field border border-gray-300 py-2 px-4 rounded-lg">
+                </div>
+                <div class="flex justify-between items-center">
+                    <button type="button" onclick="closeModal()"
+                        class="bg-gray-400 text-white py-2 px-6 rounded-lg hover:bg-gray-500 transition">Cancel</button>
+                    <button type="button" onclick="deleteClass()" class="btn-danger py-2 px-6 rounded-lg">Delete
+                        Class</button>
+                    <button type="submit" class="btn-primary py-2 px-6 rounded-lg">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(() => {
+            fetch('/api/fetchFullClasses')
+                .then(res => res.json())
+                .then(data => updateFullClassesCards(data))
+                .catch(err => console.error(err))
+        })
+
+        const StrToIdConverter = (input) => {
+            if (typeof input === 'string') {
+                return extractIdFromString(input);
+            } else if (Array.isArray(input)) {
+                return input.map(extractIdFromString).filter(Boolean);
+            } else {
+                console.error('Unsupported input type:', input);
+                return null;
+            }
+        };
+
+        const extractIdFromString = (str) => {
+            const first = str.indexOf('[');
+            const last = str.indexOf(']');
+            if (first !== -1 && last !== -1) {
+                return str.slice(first + 1, last);
+            }
+            return null;
+        };
+
+        const updateFullClassesCards = (dataArr) => {
+            const container = $('#classesContainer');
+            container.empty();
+
+            dataArr.forEach(eachClass => {
+                let classHeadID = eachClass.class_head_id
+                if (eachClass.class_head_id.startsWith('Unknown')) {
+                    classHeadID = `Removed[${StrToIdConverter(eachClass.class_head_id)}]`
+                }
+                const cardHTML = `
+            <div
+                class="bg-white p-6 rounded-2xl shadow-lg card-hover flex flex-col justify-between border-t-4 border-blue-500 min-w-[250px] sm:min-w-[300px]"
+                data-class-id="${eachClass.id}"
+                data-class-name="${eachClass.name}"
+                data-class-head="${StrToIdConverter(eachClass.class_head_id) || 'Not Assigned'}"
+                data-faculty-members="${StrToIdConverter(eachClass.faculty_members_id)}"
+                data-class-representative="${eachClass.class_representative_id}">
+                <div class="flex-grow">
+                    <h4 class="text-2xl text-gray-800 mb-4">${eachClass.name}[${eachClass.id}]</h4>
+                    <div class="border-b border-gray-300 mb-4"></div>
+                    <p class="text-gray-600 text-lg mb-1"><strong>Head:</strong> ${classHeadID}</p>
+                    <p class="text-gray-600 text-lg mb-1"><strong>Faculties:</strong>${eachClass.faculty_members_id}</p>
+                    <p class="text-gray-600 text-lg mb-1 "><strong>CR:</strong> ${eachClass.class_representative_id}</p>
+                </div>
+                <button class="edit-class-btn mt-6 w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-3 px-5 rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-transform transform hover:scale-105 shadow-md">
+                    Edit Class
+                </button>
+            </div>
+        `;
+                container.append(cardHTML);
+            });
+
+            $('.edit-class-btn').click(function () {
+                const card = $(this).closest('div');
+                const className = card.data('class-name');
+                const classId = card.data('class-id');
+                const classHead = card.data('class-head');
+                const facultyMembers = card.data('faculty-members');
+                const classRepresentative = card.data('class-representative');
+
+                $('#editModal input[name="className"]').val(className);
+                $('#editModal input[name="classId"]').val(classId);
+                $('#editModal input[name="classHead"]').val(classHead || 'Not Assigned');
+                $('#editModal input[name="facultyMembers"]').val(facultyMembers);
+                $('#editModal input[name="classRepresentative"]').val(classRepresentative);
+
+                openModal();
+            });
+
+        }
+
+        function openModal() {
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        document.getElementById('editModal').addEventListener('click', function (event) {
+            if (event.target === this) {
+                closeModal();
+            }
+        });
+
+        const deleteClass = async () => {
+            const classId = $('#editModal input[name="classId"]').val();
+            fetch('/api/deleteClass', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({'classId': classId})
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (Object.hasOwn(data, 'success')){
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Class was deleted successfully',
+                            confirmButtonText: 'Cool'
+                        }).then(result => {
+                            if (result.isConfirmed) {
+                                location.reload()
+                            }
+                        })
+                    } else if (Object.hasOwn(data, 'noClassFound')){
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'This class does not exists',
+                            confirmButtonText: 'Ah ok'
+                        })
+                    } else Swal.fire({
+                        icon: "error",
+                        title: "An unknown error occured",
+                        confirmButtonText: 'Okay',
+                    })
+                }).catch(err => {
+                    Swal.fire({
+                        icon: "error",
+                        title: "API Error ",
+                        confirmButtonText: 'Okay',
+                    })
+                })
+        }
+
+        $('form').on('submit', function (event) {
+            event.preventDefault();
+            const className = $('input[name="className"]').val();
+            const classId = $('input[name="classId"]').val();
+            const classHead = $('input[name="classHead"]').val();
+            const facultyMembers = $('input[name="facultyMembers"]').val();
+            const classRepresentative = $('input[name="classRepresentative"]').val();
+
+            fetch('/api/editClass', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    'className': className,
+                    'classId': classId,
+                    'class_head_id': classHead,
+                    'faculty_members_id': facultyMembers,
+                    'class_representative_id': classRepresentative
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (Object.hasOwn(data, 'success')) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Class was added successfully',
+                            confirmButtonText: 'Cool'
+                        }).then(result => {
+                            location.reload()
+                        })
+                    } else if (Object.hasOwn(data, 'noFacultyFound')) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Faculty ID(s) might be invalid",
+                            text: `Class faculty IDs you entered might be wrong or faculty with that ID does not exists`,
+                            confirmButtonText: 'Okay',
+                        }).then(result => {
+                            closeModal()
+                        })
+                    } else if (Object.hasOwn(data, 'noCRFound')) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Class representative ID might be invalid",
+                            text: `Class representative ID you entered might be wrong or student with that ID does not exists`,
+                            confirmButtonText: 'Okay',
+                        }).then(result => {
+                            closeModal()
+                        })
+                    } else Swal.fire({
+                        icon: "error",
+                        title: "An unknown error occured",
+                        confirmButtonText: 'Okay',
+                    }).then(result => {
+                        closeModal()
+                        })
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: "error",
+                        title: "API Error ",
+                        confirmButtonText: 'Okay',
+                    })
+                })
+
+        })
+
+        const addClassErrorPrompt = (textErrorValue) => {
+            if (!textErrorValue) return
+            Swal.fire({
+                icon: 'error',
+                title: textErrorValue,
+                confirmButtonText: 'Ok'
+            })
+            return
+        }
+
+
+        $('#addClassBtn').on('click', function () {
+            Swal.fire({
+                icon: 'question',
+                input: 'text',
+                inputLabel: "Class Name",
+                inputPlaceholder: 'Type here',
+                confirmButtonText: 'Next',
+                width: 600,
+                padding: "3em",
+                color: "#716add",
+                backdrop: `
+        rgba(0,0,123,0.4)
+        url("https://raw.githubusercontent.com/gist/brudnak/aba00c9a1c92d226f68e8ad8ba1e0a40/raw/e1e4a92f6072d15014f19aa8903d24a1ac0c41a4/nyan-cat.gif")
+        left top
+        no-repeat
+      `
+            }).then(cNamePrompt => {
+                if (cNamePrompt.isConfirmed) {
+                    const cName = cNamePrompt.value
+                    if (cName === '') return addClassErrorPrompt('Empty value was sent')
+                    Swal.fire({
+                        icon: 'question',
+                        input: 'text',
+                        inputLabel: "Class Head's ID",
+                        inputPlaceholder: 'Type here',
+                        confirmButtonText: 'Next',
+                        width: 600,
+                        padding: "3em",
+                        color: "#716add",
+                        backdrop: `
+                    rgba(0,0,123,0.4)
+                    url("https://raw.githubusercontent.com/gist/brudnak/aba00c9a1c92d226f68e8ad8ba1e0a40/raw/e1e4a92f6072d15014f19aa8903d24a1ac0c41a4/nyan-cat.gif")
+                    left top
+                    no-repeat
+                    `
+                    }).then(cHeadIDPrompt => {
+                        if (cHeadIDPrompt.isConfirmed) {
+                            const cHeadID = cHeadIDPrompt.value
+                            if (cHeadID === '') return addClassErrorPrompt('Empty value was sent')
+                            Swal.fire({
+                                icon: 'question',
+                                input: 'text',
+                                inputLabel: "Class Faculties' ID",
+                                inputPlaceholder: 'Type here',
+                                confirmButtonText: 'Next',
+                                width: 600,
+                                padding: "3em",
+                                color: "#716add",
+                                backdrop: `
+                            rgba(0,0,123,0.4)
+                            url("https://raw.githubusercontent.com/gist/brudnak/aba00c9a1c92d226f68e8ad8ba1e0a40/raw/e1e4a92f6072d15014f19aa8903d24a1ac0c41a4/nyan-cat.gif")
+                            left top
+                            no-repeat
+                        `
+                            }).then(cFacultyIDsPrompt => {
+                                if (cFacultyIDsPrompt.isConfirmed) {
+                                    const cFacultyIDs = cFacultyIDsPrompt.value;
+                                    if (cFacultyIDs === '') return addClassErrorPrompt('Empty value was sent')
+                                    Swal.fire({
+                                        icon: 'question',
+                                        input: 'text',
+                                        inputLabel: "Class Representative's ID",
+                                        inputPlaceholder: 'Type here',
+                                        confirmButtonText: 'Next',
+                                        width: 600,
+                                        padding: "3em",
+                                        color: "#716add",
+                                        backdrop: `
+                                    rgba(0,0,123,0.4)
+                                    url("https://raw.githubusercontent.com/gist/brudnak/aba00c9a1c92d226f68e8ad8ba1e0a40/raw/e1e4a92f6072d15014f19aa8903d24a1ac0c41a4/nyan-cat.gif")
+                                    left top
+                                    no-repeat
+                                    `
+                                    }).then(cRepresentativeIDPrompt => {
+                                        if (cRepresentativeIDPrompt.isConfirmed) {
+                                            const cRepresentativeID = cRepresentativeIDPrompt.value;
+                                            if (cRepresentativeID === '') return addClassErrorPrompt('Empty value was sent')
+
+                                            addClass(cName, cHeadID, cFacultyIDs, cRepresentativeID)
+                                        }
+                                    })
+                                }
+                            })
+                        }
+                    })
+                }
+            })
+        })
+
+        const addClass = async (className, classHeadID, classFacultyIDs, classRepresentativeID) => {
+            fetch('/api/addClass', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    'className': className,
+                    'class_head_id': classHeadID,
+                    'faculty_members_id': classFacultyIDs,
+                    'class_representative_id': classRepresentativeID
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (Object.hasOwn(data, 'success')) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Class was added successfully',
+                            confirmButtonText: 'Cool'
+                        }).then(result => {
+                            location.reload()
+                        })
+                    } else if (Object.hasOwn(data, 'noFacultyFound')) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Faculty ID(s) might be invalid",
+                            text: `Class faculty IDs you entered might be wrong or faculty with that ID does not exists`,
+                            confirmButtonText: 'Okay',
+                        })
+                    } else if (Object.hasOwn(data, 'noCRFound')) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Class representative ID might be invalid",
+                            text: `Class representative ID you entered might be wrong or student with that ID does not exists`,
+                            confirmButtonText: 'Okay',
+                        })
+                    } else Swal.fire({
+                        icon: "error",
+                        title: "An unknown error occured",
+                        confirmButtonText: 'Okay',
+                    })
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: "error",
+                        title: "API Error ",
+                        confirmButtonText: 'Okay',
+                    })
+                })
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardian Portal - Ticket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <!-- Ticket Overlay -->
+    <div id="ticket-overlay" class="fixed inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white flex flex-col">
+        <div class="flex justify-between items-center p-4 bg-purple-600 shadow-md">
+            <h1 id="ticket-title" class="text-2xl font-bold">Ticket Details</h1>
+            <button id="close-overlay" class="text-white hover:text-gray-200 text-2xl">✖</button>
+        </div>
+        <div class="flex-grow p-6 overflow-y-auto bg-white text-gray-900 rounded-tl-lg rounded-tr-lg">
+            <p id="ticket-category" class="text-lg font-semibold text-purple-700 mb-4">Category: <span></span></p>
+            <div id="ticket-messages" class="space-y-4 mb-4 bg-gray-50 p-4 rounded-lg h-96 overflow-y-scroll border border-purple-300">
+                <!-- Messages will be dynamically injected here -->
+            </div>
+            <div class="flex items-center space-x-2 mt-4">
+                <input id="message-input" type="text" placeholder="Write your message..." class="flex-grow p-2 border rounded-md">
+                <button id="send-message" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const ticketId = urlParams.get("ticketId");
+
+            if (!ticketId) {
+                console.error("No ticketId found in URL.");
+                showFallbackTicket();
+                return;
+            }
+
+            // Fetch and display ticket details
+            fetch('/api/fetchGuardianTicket', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticketId })
+            })
+            .then(response => response.json())
+            .then(ticketDetails => {
+                if (!ticketDetails || ticketDetails.length === 0) {
+                    console.error("No ticket data returned from API.");
+                    showFallbackTicket();
+                    return;
+                }
+                displayTicketDetails(ticketDetails[0]);
+            })
+            .catch(() => {
+                console.error("Failed to fetch ticket data. Using fallback data.");
+                showFallbackTicket();
+            });
+
+            // Function to display ticket details
+            function displayTicketDetails(ticket) {
+                $('#ticket-title').text(ticket.title);
+                $('#ticket-category span').text(ticket.category);
+
+                ticket.message_contents.forEach(message => {
+                    const messageRow = `
+                        <div class="flex ${message.is_message_by_school === "1" ? "justify-start" : "justify-end"}">
+                            <div class="max-w-xs ${message.is_message_by_school === "1" ? "bg-purple-200 text-purple-800" : "bg-blue-500 text-white"} rounded-lg p-3 shadow">
+                                <p class="text-sm">${message.content}</p>
+                                <p class="text-xs text-gray-500 mt-1">${message.sender_name}, ${message.sent_at}</p>
+                                ${message.seen === "0" ? '<span class="text-xs text-yellow-500">Unseen</span>' : ''}
+                            </div>
+                        </div>
+                    `;
+                    $('#ticket-messages').append(messageRow);
+                });
+            }
+
+            // Function to show fallback ticket data
+            function showFallbackTicket() {
+                const fallbackTicket = {
+                    title: "Homework Issue",
+                    category: "General",
+                    message_contents: [
+                        {
+                            sender_name: "School Admin",
+                            is_message_by_school: "1",
+                            content: "Please ensure homework is completed.",
+                            sent_at: "2024-12-04 10:00 AM",
+                            seen: "1"
+                        },
+                        {
+                            sender_name: "Parent",
+                            is_message_by_school: "0",
+                            content: "We will complete it by tomorrow.",
+                            sent_at: "2024-12-04 02:00 PM",
+                            seen: "0"
+                        }
+                    ]
+                };
+                displayTicketDetails(fallbackTicket);
+            }
+
+            // Handle sending a message
+            $('#send-message').on('click', function () {
+                const messageContent = $('#message-input').val().trim();
+
+                if (!messageContent) {
+                    alert("Message content cannot be empty.");
+                    return;
+                }
+
+                fetch('/api/guardianMessageSend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticketId, content: messageContent })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        const newMessage = `
+                            <div class="flex justify-end">
+                                <div class="max-w-xs bg-blue-500 text-white rounded-lg p-3 shadow">
+                                    <p class="text-sm">${messageContent}</p>
+                                    <p class="text-xs text-gray-300 mt-1">You, just now</p>
+                                </div>
+                            </div>
+                        `;
+                        $('#ticket-messages').append(newMessage);
+                        $('#message-input').val(''); // Clear input
+                        $('#ticket-messages').scrollTop($('#ticket-messages')[0].scrollHeight); // Scroll to bottom
+                    } else {
+                        alert("Failed to send message. Please try again.");
+                    }
+                });
+            });
+
+            // Close the overlay
+            $('#close-overlay').on('click', function () {
+                alert("Closing the ticket overlay."); // Optional action, can be replaced or removed
+                $('#ticket-overlay').hide(); // Hides the overlay
+            });
+        });
+    </script>
+</body>
+</html>

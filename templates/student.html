@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Student Card</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #f5f5f5, #e0f7fa);
+            font-family: 'Roboto', sans-serif;
+            color: #333333;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Student Card -->
+    <div class="max-w-sm sm:max-w-md md:max-w-lg w-full bg-white shadow-xl rounded-3xl p-6">
+        <!-- Profile Header -->
+        <div class="flex flex-col items-center">
+            <div id="studentCard-field-attendance"
+                class="bg-gray-200 w-24 h-24 rounded-full flex items-center justify-center text-gray-500 text-2xl font-bold">
+                P
+            </div>
+            <h2 id="studentCard-field-name" class="mt-4 text-xl font-semibold text-gray-800"></h2>
+            <p id="studentCard-field-rollNo" class="text-gray-500 text-sm"></p>
+            <p id="studentCard-field-class" class="text-gray-500 text-sm"></p>
+        </div>
+
+        <!-- Edit Form -->
+        <div class="mt-6 bg-gray-100 p-4 rounded-xl">
+            <h3 class="font-bold text-gray-700 mb-2">Edit Student Info</h3>
+            <div class="space-y-2">
+                <input id="editName" class="w-full p-2 border rounded" type="text" placeholder="Edit Name" />
+                <input id="editRollNo" class="w-full p-2 border rounded" type="text" placeholder="Edit Roll Number" />
+                <input id="editClassId" class="w-full p-2 border rounded" type="text" placeholder="Edit Class ID" />
+            </div>
+        </div>
+
+        <!-- JSON Info Section -->
+        <div class="mt-6 bg-gray-100 p-4 rounded-xl space-y-4" id="jsonFields">
+            <!-- Control Buttons -->
+            <div class="flex justify-end gap-2">
+                <button id="resetFieldsButton"
+                    class="bg-gray-500 hover:bg-gray-600 text-white py-1 px-4 rounded-lg text-sm font-semibold">
+                    Reset
+                </button>
+                <button id="saveFieldsButton"
+                    class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-4 rounded-lg text-sm font-semibold">
+                    Save
+                </button>
+            </div>
+        </div>
+
+        <!-- Add New Key-Value Field -->
+        <button
+            class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center space-x-2"
+            id="addField">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clip-rule="evenodd" />
+            </svg>
+            <span>Add Field</span>
+        </button>
+    </div>
+
+</body>
+
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script>
+    let originalStudentData = {};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('studentId');
+
+        fetch('/api/fetchStudentInfo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId: studentId })
+        })
+            .then(res => res.json())
+            .then(data => {
+                originalStudentData = data[0];
+                updateStudentInfo(data[0]);
+            })
+            .catch(err => console.log(err));
+    });
+
+    const updateStudentInfo = (jsonData) => {
+        if (!jsonData) return;
+
+        const { roll_no, name, class_name, class_id, attendanceState, data } = jsonData;
+        const processedData = JSON.parse(data);
+
+        $('#studentCard-field-name').text(name);
+        $('#studentCard-field-rollNo').text(`Roll No: ${roll_no}`);
+        $('#studentCard-field-class').text(`Class: ${class_name}[${class_id}]`);
+
+        $('#editName').val(name);
+        $('#editRollNo').val(roll_no);
+        $('#editClassId').val(class_id);
+
+        const attendanceText = { 1: 'P', 2: 'OD', 3: 'OL' }[attendanceState] || 'OL';
+        $('#studentCard-field-attendance').text(attendanceText);
+
+        const jsonFieldsContainer = $('#jsonFields');
+        jsonFieldsContainer.find('.dynamic-field').remove();
+        for (const [key, value] of Object.entries(processedData)) {
+            const field = `
+                <div class="flex justify-between items-center border-b py-2 dynamic-field">
+                    <input class="w-1/4 p-2 border rounded json-key" type="text" value="${key}" readonly />
+                    <input class="w-3/4 p-2 border rounded json-input" data-key="${key}" type="text" value="${value}" />
+                    <button class="text-red-500 hover:text-red-700 delete-field">&times;</button>
+                </div>`;
+            jsonFieldsContainer.append(field);
+        }
+    };
+
+    $('#saveFieldsButton').on('click', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('studentId');
+
+        const updatedData = {
+            id: studentId,
+            name: $('#editName').val(),
+            roll_no: $('#editRollNo').val(),
+            class_id: $('#editClassId').val(),
+            additional_data: {}
+        };
+
+        $('.json-input').each(function () {
+            const key = $(this).siblings('.json-key').val();
+            const value = $(this).val();
+            updatedData.additional_data[key] = value;
+        });
+
+        fetch('/api/editStudent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData)
+        })
+            .then(() => {
+                Swal.fire({
+                    title: 'Saved!',
+                    text: 'Student data updated successfully.',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    backdrop: true,
+                }).then(() => {
+                    location.reload();
+                });
+            })
+            .catch(() => Swal.fire('Error!', 'Failed to save data.', 'error'));
+    });
+
+    $('#addField').on('click', () => {
+        const newField = `
+            <div class="flex justify-between items-center border-b py-2 dynamic-field">
+                <input class="w-1/4 p-2 border rounded json-key" type="text" placeholder="Key" />
+                <input class="w-3/4 p-2 border rounded json-input" type="text" placeholder="Value" />
+                <button class="text-red-500 hover:text-red-700 delete-field">&times;</button>
+            </div>`;
+        $('#jsonFields').append(newField);
+    });
+
+    $('#jsonFields').on('click', '.delete-field', function () {
+        $(this).closest('.dynamic-field').remove();
+    });
+
+    $('#resetFieldsButton').on('click', () => {
+        if (!originalStudentData) {
+            Swal.fire('Error!', 'No original data to reset to.', 'error');
+            return;
+        }
+
+        const { roll_no, name, class_id, data } = originalStudentData;
+
+        $('#editName').val(name);
+        $('#editRollNo').val(roll_no);
+        $('#editClassId').val(class_id);
+
+        const processedData = JSON.parse(data);
+        const jsonFieldsContainer = $('#jsonFields');
+        jsonFieldsContainer.find('.dynamic-field').remove();
+
+        for (const [key, value] of Object.entries(processedData)) {
+            const field = `
+                <div class="flex justify-between items-center border-b py-2 dynamic-field">
+                    <input class="w-1/4 p-2 border rounded json-key" type="text" value="${key}" readonly />
+                    <input class="w-3/4 p-2 border rounded json-input" data-key="${key}" type="text" value="${value}" />
+                    <button class="text-red-500 hover:text-red-700 delete-field">&times;</button>
+                </div>`;
+            jsonFieldsContainer.append(field);
+        }
+
+        Swal.fire('Reset!', 'All fields have been reset to their original values.', 'info');
+    });
+</script>
+
+</html>
